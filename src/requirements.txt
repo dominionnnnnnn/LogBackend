@@ -1,0 +1,11 @@
+django
+psycopg[binary]
+djangorestframework
+redis
+django-redis
+celery[redis]
+drf-spectacular
+djangorestframework-simplejwt
+requests
+django-cors-headers
+Pillow
