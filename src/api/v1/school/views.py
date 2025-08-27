@@ -3,7 +3,9 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .serializers import SchoolSerializer, DepartmentSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
+from .serializers import SchoolSerializer, DepartmentSerializer, SchoolLogoSerializer
+
 from api.v1.users.models import AdminProfile
 
 
@@ -13,11 +15,12 @@ class SchoolListView(generics.ListAPIView):
     serializer_class = SchoolSerializer
 
 class DepartmentListView(generics.ListAPIView):
+    queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
     
     def get_queryset(self):
         school_id = self.kwargs['school_id']
-        return Department.objects.filter(school_id)
+        return Department.objects.filter(school_id=school_id)
 
 class CreateSchoolView(generics.CreateAPIView):
     queryset = School.objects.all()
@@ -29,7 +32,7 @@ class CreateSchoolView(generics.CreateAPIView):
 
 
         try:
-            admin_profile = user.adminprofile
+            admin_profile = user.admin_profile
         except AdminProfile.DoesNotExist:
             return Response({"error": "You are not authorized to create a school."},
                             status=status.HTTP_403_FORBIDDEN)
@@ -84,3 +87,28 @@ class CreateDepartmentView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class SchoolLogoUploadView(generics.UpdateAPIView):
+    serializer_class = SchoolLogoSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_object(self):
+        """Return the school linked to the logged-in admin."""
+        user = self.request.user
+
+        # Only admins should be able to upload school logo
+        if not hasattr(user, "admin_profile") or user.role != "admin":
+            return Response(
+                {"detail": "Only admins can upload school logos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        school = user.admin_profile.school
+        if not school:
+            return Response(
+                {"detail": "No school assigned to this admin."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return school

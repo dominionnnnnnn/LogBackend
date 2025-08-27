@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import status, permissions
 from .models import User, StudentProfile, SupervisorProfile, AdminProfile
 from .serializers import UserRegistrationSerializer, StudentProfileSetupSerializer, AdminProfileSetupSerializer, SupervisorProfileSetupSerializer, SupervisorPhotoSerializer, StudentPhotoSerializer, AdminPhotoSerializer ,UserDetailSerializer
@@ -8,6 +9,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .tasks import send_verification_email
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 
 class UserRegistrationView(APIView):
@@ -26,6 +28,21 @@ class UserRegistrationView(APIView):
             #     return Response({"error": "Email failed"}, status=500)
             return Response({"message": "Email sent"})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ResendVerificationCodeView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = get_object_or_404(User, email=email)
+
+        code = user.generate_verification_code()
+
+        send_verification_email(user.email, code)
+
+        return Response({"message": "Verification code resent"}, status=status.HTTP_200_OK)
     
 class VerifyCodeView(APIView):
      def post(self, request):
@@ -47,14 +64,16 @@ class VerifyCodeView(APIView):
         user.verification_code = None
         user.code_expiry = None
         user.save()
-
-        return Response({"message": "Email verified successfully."}, status=200)
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "message": "Email verified successfully.",
+            "access": str(refresh.access_token),
+            "refresh": str(refresh)
+        }, status=200)
 
 class UserProfileSetupView(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
-        user = request.user
-        
         if request.user.role == 'student':
             serializer = StudentProfileSetupSerializer(data=request.data, context={'request': request})
         elif request.user.role == 'supervisor':
@@ -105,7 +124,55 @@ class UserDetailView(APIView):
         user = request.user
         serializer = UserDetailSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ListStudentView(APIView):
+    serializer_class = UserDetailSerializer
+    permission_classes = [IsAuthenticated]
     
+    def get(self, request):
+        user = request.user
+        base_qs = User.objects.filter(role="student")  # Only students
+        
+        if user.role == 'student':
+            raise PermissionDenied("Students cannot access this view.")
+        
+        elif user.role == 'admin':
+            qs = base_qs.filter(
+                student_profile__school_id=user.admin_profile.school.id
+            )
+        
+        elif user.role == "supervisor":
+            sp = user.supervisor_profile
+            qs = base_qs.filter(
+                student_profile__department_id=sp.department.id
+            )
+        
+        else:
+            qs = User.objects.none()
+        
+        serializer = self.serializer_class(qs, many=True)
+        return Response(serializer.data)
+
+class ListSupervisorView(APIView):
+    serializer_class = UserDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Only admins can access this
+        if user.role != 'admin':
+            raise PermissionDenied("Only admins can access this view.")
+
+        # Filter supervisors by the same school as the admin
+        qs = User.objects.filter(
+            role="supervisor",
+            supervisor_profile__school_id=user.admin_profile.school.id
+        )
+
+        serializer = self.serializer_class(qs, many=True)
+        return Response(serializer.data)
+        
 class IsSupervisor(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == 'supervisor'
@@ -150,3 +217,21 @@ class AssignSupervisorView(APIView):
             {'detail': 'Supervisor assigned successfully.'},
             status=status.HTTP_200_OK
         )
+        
+class ListAssignedStudentsView(APIView):
+    serializer_class = UserDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if user.role != "supervisor":
+            raise PermissionDenied("Only supervisors can access this view.")
+
+        qs = User.objects.filter(
+            role="student",
+            student_profile__supervisor=user
+        )
+
+        serializer = self.serializer_class(qs, many=True)
+        return Response(serializer.data)

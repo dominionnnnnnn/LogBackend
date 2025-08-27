@@ -20,11 +20,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.save()
         return user
 
-class UserDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'role', 'full_name']
-
 # profile serializers
 class StudentProfileSetupSerializer(serializers.ModelSerializer):
     school = serializers.PrimaryKeyRelatedField(
@@ -37,7 +32,7 @@ class StudentProfileSetupSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = StudentProfile
-        fields = ['school', 'department', 'matric_number', 'internship_start', 'internship_end']
+        fields = ['school', 'department', 'matric_number', 'organisation_name', 'internship_location', 'internship_start', 'internship_end']
 
     def create(self, validated_data):
         return StudentProfile.objects.create(user=self.context['request'].user, **validated_data)
@@ -66,7 +61,72 @@ class AdminProfileSetupSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return AdminProfile.objects.create(user=self.context['request'].user, **validated_data)
 
-# photo serializers
+class StudentProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentProfile
+        fields = [
+            'photo', 'school', 'department', 'matric_number',
+            'organisation_name', 'internship_location',
+            'internship_start', 'internship_end'
+        ]
+
+class SupervisorProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupervisorProfile
+        fields = ['photo', 'school', 'department', 'office', 'phone_number']
+
+class AdminProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminProfile
+        fields = ['photo', 'school', 'position', 'phone_number']
+        
+class UserDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'full_name', 'role', 'created_at']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        if instance.role == "student" and hasattr(instance, 'student_profile'):
+            data['profile'] = StudentProfileSerializer(instance.student_profile).data
+            data['supervisor_name'] = (
+                instance.student_profile.supervisor.full_name
+                if instance.student_profile.supervisor else None
+            )
+            data['student_id'] = (
+                instance.student_profile.id
+                if instance.student_profile else None
+            )
+            data['school_name'] = (
+                instance.student_profile.school.name
+                if instance.student_profile.school else None
+            )
+            data['department'] = (
+                instance.student_profile.department.name
+                if instance.student_profile.department else None
+            )
+        elif instance.role == "supervisor" and hasattr(instance, 'supervisor_profile'):
+            data['profile'] = SupervisorProfileSerializer(instance.supervisor_profile).data
+            data['school_name'] = (
+                instance.supervisor_profile.school.name
+                if instance.supervisor_profile.school else None
+            )
+            data['department'] = (
+                instance.supervisor_profile.department.name
+                if instance.supervisor_profile.department else None
+            )
+        elif instance.role == "admin" and hasattr(instance, 'admin_profile'):
+            data['profile'] = AdminProfileSerializer(instance.admin_profile).data
+            
+            data['school_name'] = (
+                instance.admin_profile.school.name
+                if instance.admin_profile.school else None
+            )
+
+        return data
+
+
 class SupervisorPhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupervisorProfile

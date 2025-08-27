@@ -8,7 +8,7 @@ from django.core.mail import send_mail
 def send_verification_email(to_email, code):
     send_mail(
         subject="Verify Your Email",
-        message=f"Your verification code is: {code}. It will expire in 10 minutes",
+        message=f"Your verification code is: {code}. It will expire in 3 minutes",
         from_email=f"App Team <noreply@myapp.com>",
         recipient_list=[to_email],
         fail_silently=False,

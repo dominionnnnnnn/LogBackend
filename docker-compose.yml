@@ -12,8 +12,6 @@ services:
         restart: true
     env_file:
       - .env
-    networks:
-      - host
  db:
   image: postgres:17
   container_name: LogWeb_postgres_db
@@ -29,16 +27,12 @@ services:
     retries: 5
     start_period: 30s
     timeout: 10s
-  networks:
-    - host
  redis:
     image: redis:7
     container_name: LogWeb_redis_cache
     ports:
       - 6379:6379
     restart: always
-    networks:
-      - host
  celery:
     build:
       context: .
@@ -52,16 +46,10 @@ services:
       - web
     env_file:
       - .env
-    networks:
-      - host
  mail:
     image: mailhog/mailhog
     container_name: LogWeb_mail
     ports:
       - 8025:8025
-    networks:
-      - host
 volumes:
   postgres_db:
-networks:
-  host:

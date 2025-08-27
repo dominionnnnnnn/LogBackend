@@ -27,7 +27,7 @@ class User(AbstractUser):
     def generate_verification_code(self):
         code = f"{random.randint(100000, 999999)}"
         self.verification_code = code
-        self.code_expiry = timezone.now() + timedelta(minutes=10)
+        self.code_expiry = timezone.now() + timedelta(minutes=3)
         self.save()
         return code
     
@@ -59,7 +59,7 @@ class SupervisorProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='supervisor_profile')
     photo = models.ImageField(upload_to='profile_photos/supervisors/', blank=True, null=True)
     school = models.ForeignKey(School, on_delete=models.PROTECT)
-    department = models.CharField(max_length=100)
+    department = models.ForeignKey(Department, on_delete=models.PROTECT)
     office = models.CharField(max_length=100, blank=True)
     phone_number = models.CharField(max_length=15, blank=True)
     def __str__(self):

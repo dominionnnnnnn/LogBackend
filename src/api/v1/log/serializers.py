@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Log
+from .models import Log, Comment
 
 class LogSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,6 +7,7 @@ class LogSerializer(serializers.ModelSerializer):
         fields = ['id', 'content', 'status', 'date', 'hours_worked']
         read_only_fields = ['id', 'status']
         
+
 class LogUpdateStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Log
@@ -23,3 +24,9 @@ class LogUpdateStatusSerializer(serializers.ModelSerializer):
         instance.status = new_status
         instance.save()
         return instance
+    
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'supervisor']
