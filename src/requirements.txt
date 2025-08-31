@@ -10,3 +10,4 @@ requests
 django-cors-headers
 Pillow
 whitenoise==6.7.0
+dj-database-url==3.0.1
