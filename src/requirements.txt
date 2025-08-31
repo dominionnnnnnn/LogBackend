@@ -9,3 +9,4 @@ djangorestframework-simplejwt
 requests
 django-cors-headers
 Pillow
+whitenoise==6.7.0

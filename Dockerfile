@@ -5,15 +5,21 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl
+# Install system dependencies
+RUN apt-get update && apt-get install -y curl build-essential libpq-dev
 
+# Install uv package manager
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# Install dependencies
 COPY src/requirements.txt .
 RUN uv pip install -r requirements.txt --system
 
+# Copy project files
 COPY src/ .
 
-EXPOSE 8000
+# Collect static files (so Whitenoise can serve them)
+RUN python manage.py collectstatic --noinput
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Use Gunicorn for production
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
