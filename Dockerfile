@@ -18,8 +18,5 @@ RUN uv pip install -r requirements.txt --system
 # Copy project files
 COPY src/ .
 
-# Collect static files (so Whitenoise can serve them)
-RUN python manage.py collectstatic --noinput
-
 # Use Gunicorn for production
 CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
