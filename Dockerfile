@@ -19,4 +19,5 @@ RUN uv pip install -r requirements.txt --system
 COPY src/ .
 
 # Use Gunicorn for production
-CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+
