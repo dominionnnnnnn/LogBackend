@@ -45,7 +45,7 @@ ALLOWED_HOSTS = ['*']
 #         )
 #         print("✅ Superuser 'admin' created!")
 
-post_migrate.connect(create_superuser)
+# post_migrate.connect(create_superuser)
 
 # Application definition
 
