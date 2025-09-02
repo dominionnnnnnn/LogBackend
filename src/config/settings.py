@@ -31,23 +31,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-# from django.contrib.auth import get_user_model
-# from django.db.models.signals import post_migrate
-# from django.conf import settings
-
-# def create_superuser(sender, **kwargs):
-#     User = get_user_model()
-#     if not User.objects.filter(username="admin").exists():
-#         User.objects.create_superuser(
-#             username="admin",
-#             email="admin@gmail.com",
-#             password="admindominion"
-#         )
-#         print("✅ Superuser 'admin' created!")
-
-# post_migrate.connect(create_superuser)
-
-# Application definition
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -65,10 +51,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
