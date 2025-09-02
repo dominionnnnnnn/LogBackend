@@ -19,13 +19,7 @@ class UserRegistrationView(APIView):
             user = serializer.save()
             code = user.generate_verification_code()
             email = user.email
-            task = send_verification_email(email, code)
-            # print(task)
-            # status_code = task.get("status_code", None)
-            # if status_code is not None and status_code == 200:
-            #     return Response({"message": "Email sent"})
-            # else:
-            #     return Response({"error": "Email failed"}, status=500)
+            send_verification_email(email, code)
             return Response({"message": "Email sent"})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

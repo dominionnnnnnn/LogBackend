@@ -197,7 +197,7 @@ CELERY_TASK_SERIALIZER = 'json'
 # MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY')
 # MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN')
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # EMAIL_HOST = 'smtp.mailgun.org'          # or Gmail: 'smtp.gmail.com'
 # EMAIL_PORT = 587
@@ -207,7 +207,16 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 # DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-EMAIL_HOST = "LogWeb_mail"
-EMAIL_PORT = 1025
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-CORS_ALLOW_ALL_ORIGINS = True
+# EMAIL_HOST = "LogWeb_mail"
+# EMAIL_PORT = 1025
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# CORS_ALLOW_ALL_ORIGINS = True
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER") 
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
